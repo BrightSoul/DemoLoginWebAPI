@@ -1,0 +1,123 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <script src="Scripts/jquery-1.9.1.min.js"></script>
+    <script src="Scripts/bootstrap.min.js"></script>
+    <link href="Content/bootstrap.min.css" rel="stylesheet" />
+    <link href="Content/bootstrap-theme.min.css" rel="stylesheet" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title></title>
+	<meta charset="utf-8" />
+</head>
+<body>
+    <h1>
+        Demo Login ASP.NET Web API 2
+    </h1>
+    <p>Clicca il bottone e ti verrà chiesto di inserire le credenziali per consumare l'API. Se il login è avvenuto con successo, al secondo click verrà usato il Token restituito dal server con la prima risposta.</p>
+    <div><button class="btn btn-primary" onclick="app.invocaApi()">Clicca per invocare l'API</button></div>
+    <div style="padding-top:20px;">
+        <h4>Log operazioni:</h4>
+        <textarea style="border:0px;" id="log" readonly cols="60" rows="10"></textarea>
+    </div>
+        <div id="modaleCredenziali" class="modal fade" tabindex="-1" role="dialog">
+            <form class="form-horizontal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title">Inserisci i dati di login</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Loggati con lo username <b>admin</b> e la password <b>password</b>.</p>
+                            <div class="form-group">
+                                <label for="inputEmail3" class="col-sm-2 control-label">Username</label>
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="Username">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="inputPassword3" class="col-sm-2 control-label">Password</label>
+                                <div class="col-sm-10">
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Password">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Annulla</button>
+                            <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="app.invocaApiConCredenziali(this.form.username.value, this.form.password.value)">Login</button>
+                        </div>
+                    </div><!-- /.modal-content -->
+                </div><!-- /.modal-dialog -->
+            </form>
+    </div><!-- /.modal -->
+
+
+    <script type="text/javascript">
+        var app = {
+            token: null,
+            url: '/api/OraEsatta',
+            logga: function (testo) {
+                console.log(testo);
+                var log = document.getElementById("log");
+                log.value += testo + "\n";
+                log.scrollTop = log.scrollHeight;
+            },
+            successo: function (orario, esito, xhr) {
+                app.logga("OK, l'ora esatta è: " + orario);
+                console.log(xhr);
+                app.token = xhr.getResponseHeader("Server-Authorization");
+            },
+            errore: function (err) {
+                switch (err.status) {
+                    case 500:
+                        app.logga("Errore: hai impostato la ChiaveSimmetrica nel web.config?");
+                        break;
+                    case 401:
+                        if (app.token) {
+                            app.logga("Accesso non autorizzato. Rimuovo il token, presumo che sia scaduto.");
+                            app.token = null;
+                        } else {
+                            app.logga("Accesso non autorizzato. Le credenziali non erano esatte.");
+                        }
+                        break;
+                }
+            },
+            chiediCredenziali: function () {
+                $('#modaleCredenziali').modal('show');
+            },
+            invocaApi: function () {
+                if (app.token)
+                    app.invocaApiConToken();
+                else
+                    app.chiediCredenziali();
+            },
+            invocaApiConCredenziali: function (username, password) {
+                app.logga("Effettuo la richiesta con le credenziali: " + username + ", " + password);
+                $.ajax({
+                    beforeSend: function(request) {
+                        request.setRequestHeader("Authorization", 'Basic ' + btoa(username + ':' + password));
+                    },
+                    dataType: "json",
+                    url: app.url                   
+                })
+                .success(app.successo)
+                .error(app.errore);
+            },
+            invocaApiConToken: function () {
+                app.logga("Effettuo la richiesta con " + app.token.substr(0, 20) + "...");
+                $.ajax({
+                    beforeSend: function (request) {
+                        request.setRequestHeader("Authorization", app.token);
+                    },
+                    dataType: "json",
+                    url: app.url
+                })
+                .success(app.successo)
+                .error(app.errore);
+            }
+
+        };
+    </script>
+</body>
+
+</html>

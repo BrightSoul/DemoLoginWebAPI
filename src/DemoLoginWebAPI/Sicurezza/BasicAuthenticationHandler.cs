@@ -1,6 +1,7 @@
 ﻿using DemoLoginWebAPI.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IdentityModel.Tokens;
 using System.Linq;
 using System.Net;
@@ -18,6 +19,7 @@ namespace DemoLoginWebAPI.Sicurezza
     {
         private const string WWWAuthenticateHeader = "WWW-Authenticate";
         private const string BasicScheme = "Basic";
+        private static bool inviaChallenge = bool.Parse(ConfigurationManager.AppSettings["InviaChallenge"]);
 
         private IQueryable<Utente> utenti;
         public BasicAuthenticationHandler(IQueryable<Utente> utenti)
@@ -54,7 +56,7 @@ namespace DemoLoginWebAPI.Sicurezza
                 {
                     var response = task.Result;
                     //Altrimenti, se lo status della response è stato impostato su Unauthorized invito l'utente a loggarsi
-                    if (response.StatusCode == HttpStatusCode.Unauthorized)
+                    if (response.StatusCode == HttpStatusCode.Unauthorized && inviaChallenge)
                         InviaChallenge(request, response);
 
                     return response;

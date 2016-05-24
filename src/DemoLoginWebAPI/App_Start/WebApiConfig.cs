@@ -26,7 +26,6 @@ namespace DemoLoginWebAPI
             var utenti = new List<Utente>
             {
                 new Utente { Email = "admin@example.com", IdUtente = 1, Username = "admin", Password = "password", Ruolo = "Amministratore" },
-                new Utente { Email = "cliente@example.com", IdUtente = 2, Username = "cliente", Password = "password", Ruolo = "Cliente" }
             };
 
             //privilegiamo l'autenticazione basata su token

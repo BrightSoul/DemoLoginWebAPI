@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IdentityModel.Protocols.WSTrust;
 using System.IdentityModel.Tokens;
 using System.Linq;
@@ -17,7 +18,9 @@ namespace DemoLoginWebAPI.Sicurezza
     public class TokenHandler : DelegatingHandler
     {
         private const string TokenScheme = "Token";
-        private byte[] symmetricKey = Guid.Parse("d9e5c91b-0fce-497a-a487-7a55fc0cd649").ToByteArray();
+        private static byte[] symmetricKey = Guid.Parse(ConfigurationManager.AppSettings["ChiaveSimmetrica"]).ToByteArray();
+        private static TimeSpan durataToken = TimeSpan.Parse(ConfigurationManager.AppSettings["DurataToken"]);
+        private static TimeSpan clockSkew = TimeSpan.Parse(ConfigurationManager.AppSettings["ClockSkew"]);
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
 
@@ -29,22 +32,19 @@ namespace DemoLoginWebAPI.Sicurezza
                 if (principal != null)
                     request.GetRequestContext().Principal = principal;
 
-                //return base.SendAsync(request, cancellationToken);
             }
-            //else {
 
-                return base.SendAsync(request, cancellationToken)
-                    .ContinueWith(task =>
-                    {
-                        var response = task.Result;
-                    //Altrimenti, se lo status della response è stato impostato su Unauthorized invito l'utente a loggarsi
-                    principal = request.GetRequestContext().Principal;
+            return base.SendAsync(request, cancellationToken)
+                .ContinueWith(task =>
+                {
+                    var response = task.Result;
+                        //Altrimenti, se lo status della response è stato impostato su Unauthorized invito l'utente a loggarsi
+                        principal = request.GetRequestContext().Principal;
                         //if (principal.Identity.IsAuthenticated && authorization != null && authorization.Parameter != TokenScheme)
                         if (principal.Identity.IsAuthenticated)
-                            EmettiToken(response, principal, scadenza: TimeSpan.FromMinutes(30));
-                        return response;
-                    });
-            //}
+                        EmettiToken(response, principal, scadenza: durataToken);
+                    return response;
+                });
         }
 
         private void EmettiToken(HttpResponseMessage response, IPrincipal principal, TimeSpan scadenza)
@@ -88,11 +88,13 @@ namespace DemoLoginWebAPI.Sicurezza
                     ValidateIssuer = true,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new InMemorySymmetricSecurityKey(symmetricKey),
-                    ValidIssuer = "self"
+                    ValidIssuer = "self",
+                    ClockSkew = clockSkew
                 };
             SecurityToken token;
             try
             {
+                
                 var principal = tokenHandler.ValidateToken(encodedToken, validationParameters, out token);
                 return principal;
             }
