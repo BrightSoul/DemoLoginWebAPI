@@ -34,7 +34,7 @@ Questo progetto usa il pacchetto NuGet [System.IdentityModel.Tokens.Jwt](https:/
 per emettere e validare i Token.
 Un [Token JWT](https://jwt.io/) contiene i *claims* dell'utente che si era autenticato in precedenza con la Basic Authentication.
 I claims sono serializzati in formato JSON e firmati digitalmente per impedire la manipolazione del client.
-Quando il client viene allegato alla richiesta, viene validato da ASP.NET per verificarne l'integrità.
+Quando il token viene inviato dal client con la sua richiesta, viene validato dal server per verificarne l'integrità.
 
 Dopo che il server ha validato il contenuto del Token, potrà estrarre da esso
 il nome utente, il suo id, i suoi ruoli o qualsiasi altra informazione avremo scelto
